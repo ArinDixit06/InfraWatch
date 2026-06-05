@@ -1,0 +1,162 @@
+================================================================================
+                        INFRAWATCH APP - FEATURE SPECIFICATION
+================================================================================
+
+InfraWatch is a React Native mobile application built on Expo (v54.0.0) designed
+to streamline civic reporting of road and infrastructure hazards in the Delhi-NCR
+region. The app uses Google's Gemini Vision AI to identify structural damage, 
+auto-assign the report to the correct government jurisdiction, and generate 
+bilingual formal complaints.
+
+--------------------------------------------------------------------------------
+1. GLOBAL APP LOGIC & CORE ARCHITECTURE
+--------------------------------------------------------------------------------
+File: App.js
+- Custom Safe Area Container: Set up with dark themes, status bar styling, and 
+  automatic paddingTop calculation based on Platform.OS (Android/iOS).
+- Expo Location Auto-Detection:
+  * Triggers background permissions request (`requestForegroundPermissionsAsync`).
+  * Resolves coordinates using fast last-known position (`getLastKnownPositionAsync`) 
+    with a fallback to active GPS tracking (`getCurrentPositionAsync`).
+  * Resolves coordinate location to local address using reverse geocoding 
+    (`reverseGeocodeAsync`).
+  * Formats city/state strings and converts major NCR states to shorthand codes 
+    (Delhi -> DL, Haryana -> HR, Uttar Pradesh -> UP).
+- App Header Bar:
+  * Sleek Logo container with eye badge icon.
+  * Real-time location indicator badge showing active detected locality (e.g. "Delhi, DL").
+- Bottom Navigation Bar:
+  * Native touchable tab buttons for quick switching.
+  * Highlighted active state colors (#a855f7) with custom Ionicons.
+  * Pages routed: Report, History, Nearby, About.
+
+--------------------------------------------------------------------------------
+2. SCREEN 1: REPORT & ANALYSIS SCREEN
+--------------------------------------------------------------------------------
+File: src/components/ReportScreen.js
+- Image Input Options:
+  * Capture Photo: Launches native camera interface.
+  * Choose from Gallery: Accesses photo library.
+  * Real-time preview of selected image with overwrite option.
+- Form Inputs:
+  * Infrastructure Type: Category dropdown (e.g., Pothole, Caved-in Road, 
+    Manhole, Broken Pavement, Damaged Streetlight).
+  * Road Classification Selection:
+    - Colony / Local Sector Road (Local Municipal responsibility)
+    - Arterial / Major City Road (PWD responsibility)
+    - Highway / Expressway (NHAI responsibility)
+    - Bridge / Flyover (Specialized PWD/GMDA divisions)
+    - Footbridge / Subway (Municipal divisions)
+- AI Observation Engine:
+  * Integrates Google Generative AI (`gemini-2.5-flash`).
+  * Converts image URIs to Base64 (supports cross-platform native & web files).
+  * Uses advanced system instructions instructing the AI to act as an Indian 
+    infrastructure inspector.
+  * JSON constraint response enforces high-precision parameters:
+    - damage_type: Description of damage (e.g., "deep pothole with edge cracking").
+    - severity: Severity status (LOW, MEDIUM, HIGH, CRITICAL).
+    - severity_reasoning: Rationale for classification.
+    - estimated_size: Metric/imperial size estimation.
+    - risk_narrative: Safety risk assessment (vehicles, pedestrians).
+    - context_observations: Surrounding markers (schools, residential area, etc.).
+    - authority_name: Assigned official civic department.
+    - authority_reasoning: Rationale for assigning that specific body.
+    - authority_email: Direct email address of the authority.
+    - complaint_email_subject: Formal email subject prefilled with details.
+    - complaint_letter_english: Formatted formal complaint in English.
+    - complaint_letter_hindi: Formatted formal complaint in Hindi.
+    - helpline_number: Direct phone contact.
+    - twitter_handle: Target social handle.
+  * Local Cache Fallback: If Gemini API fails or is offline, a location-aware 
+    map assigns the correct authority dynamically.
+- Complaint Action Panel:
+  * Language Switcher: Toggle the generated letter between English & Hindi.
+  * Direct Copy Commands: Copy Email Recipient, Copy Subject, Copy Letter Body.
+  * Mail Launcher: Standard prefilled `mailto:` deep link triggering native mail clients.
+- Beautiful Shareable Report Card:
+  * Visualizes the status via `ReportCard.js`.
+  * Status-colored severity badges: Low (Green), Medium (Yellow), High (Orange), Critical (Red).
+  * Exports card as PNG directly to phone gallery.
+
+--------------------------------------------------------------------------------
+3. SCREEN 2: REPORT HISTORY & LOCAL DATABASE
+--------------------------------------------------------------------------------
+File: src/components/HistoryScreen.js
+- Local Storage System:
+  * Saves report objects dynamically using `@react-native-async-storage/async-storage`.
+  * Deduplicates items and handles retrieval chronological sorting.
+- Dashboard List View:
+  * Grid display of historic card entries.
+  * Displays thumbnail preview, damage type, localized address, date stamp, 
+    severity color indicators, and the assigned authority.
+- History Detail Modal:
+  * Opens detailed overview for any selected historical record.
+  * Displays full analysis statistics (Observations, Risk narrative, Size details).
+  * Embedded Complaint Email Draft box.
+  * Bilingual toggles (English/Hindi) for email bodies.
+  * Copy options: Copy Email, Copy Subject, Copy Complaint Letter.
+  * Integrated Mail App deep link (`mailto:` client launcher).
+  * Card Export/Sharing utility.
+
+--------------------------------------------------------------------------------
+4. SCREEN 3: NEARBY DIRECTORY & HELPLINES
+--------------------------------------------------------------------------------
+File: src/components/NearbyScreen.js
+- Location-Based City Switcher:
+  * Automatically checks user position on screen load.
+  * Auto-selects the directory tab based on reverse-geocoded coordinates 
+    (Delhi, Gurugram, or Noida).
+  * Manual refresh button triggers standard geocoder refresh.
+- Tab-based Civic Directories:
+  * Delhi (MCD & PWD Division)
+  * Gurugram (MCG & GMDA Division)
+  * Noida (Noida Authority & UP state portals)
+  * National (National Highway Authority of India - NHAI & Expressways)
+- Verified Civic Contact Directory Cards:
+  * MCD Toll-Free: 155305 (Local streets, sanitation, parks, lighting, subways)
+  * PWD Delhi Central: 1908 (Arterial roads > 60ft width, flyovers, bridges)
+  * MCD Central Helpline: 1800110093 (Direct ticket tracking hotline)
+  * Delhi Traffic Police: 1095 (Major road hazards, road caves, severe waterlogging)
+  * MCG Toll-Free: 18001801817 (Sector inner roads, colony repairs, pathways)
+  * GMDA Call Center: 0124-2746600 (Arterial sector roads, metropolitan drains)
+  * Gurugram Traffic Police: 0124-2386000 (Road blocks, broken highway entries)
+  * Haryana CM Window: 18002000022 (Unresolved sector repairs escalation)
+  * Noida Authority: 0120-2425025 (Residential inner sectors, parks, streetlights)
+  * Noida Traffic Helpdesk: 9971009001 (WhatsApp helpline for road defects)
+  * UP Jansunwai Portal: 1076 (UP State CM grievance portal escalation)
+  * NHAI Highways: 1033 (National Expressways, NH-48, DND, highway structural safety)
+  * MoRTH Helpline: 1800116555 (Interstate infrastructure issues)
+  * National Emergency: 112 (Accidents, structural collapse, active electrical hazards)
+- Direct Native Interactions:
+  * Call Button: Opens dialing app prefilled with contact details via `tel:${number}` link.
+  * X (Twitter) Button: Parses the handle to launch the native Twitter app 
+    (`twitter://user?screen_name=...`) and falls back to a web view link 
+    (`https://twitter.com/...`) if the application is missing.
+- Active Safety Warning Box: High-visibility warning box directing citizens 
+  to contact unified emergency dispatch 112 for severe active hazards.
+
+--------------------------------------------------------------------------------
+5. SCREEN 4: ABOUT INFO SCREEN
+--------------------------------------------------------------------------------
+File: src/components/AboutScreen.js
+- Concept Exposition: Visual breakdown explaining road jurisdictional overlap 
+  challenges in Delhi-NCR (MCD vs PWD vs NHAI) and how Gemini AI solves this.
+- Feature Overview Cards:
+  * Gemini Vision AI Analysis
+  * Automatic Authority Assignment
+  * Dual-Language Complaints
+- GitHub Source Link: Opens official project repository via browser using `Linking`.
+- Engineering Disclaimer Box: Structural disclaimer detailing that AI assessments 
+  are supplemental and do not replace professional civil engineering certifications.
+- Build Versioning & Credits: Lists dependencies used (Expo 54, Gemini AI).
+
+--------------------------------------------------------------------------------
+6. REUSABLE CARD RENDER COMPONENT
+--------------------------------------------------------------------------------
+File: src/components/ReportCard.js
+- Visual Summary Layout: Renders card including captured image thumbnail, 
+  geographic location markers, date, authority badge, risk profile, size metrics, 
+  context details, severity indicator bar, and official disclaimer block.
+- Capture Reference Hook: Used by the screen generators to take screenshot snapshots 
+  for native sharing protocols.
+================================================================================
