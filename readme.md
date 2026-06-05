@@ -1,95 +1,126 @@
-InfraWatch — Full Build Prompt
-What you're building
-A mobile-first React web app (PWA, runs on Android Chrome) that lets anyone photograph road damage or bridge defects, get an instant AI-powered severity analysis via Gemini Vision, identify the correct government authority, and generate a ready-to-send complaint — all client-side, no backend required.
+# InfraWatch
 
-Tech stack
+[![Expo v54](https://img.shields.io/badge/Expo-v54.0.0-blue?logo=expo&logoColor=white)](https://expo.dev)
+[![Gemini AI](https://img.shields.io/badge/Powered%20By-Gemini%202.5%20Flash-orange?logo=google-gemini&logoColor=white)](https://deepmind.google/technologies/gemini/)
+[![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS%20%7C%20Web-brightgreen)](https://reactnative.dev)
 
-React 18 + Vite
-@google/generative-ai SDK (client-side, key in .env)
-react-share for share sheet
-html2canvas for report card image export
-No backend. No auth. No database.
+InfraWatch is a native mobile application built with **React Native** and **Expo** that streamlines civic reporting of road hazards and infrastructure defects across the Delhi-NCR region. Using **Google Gemini Vision AI**, it classifies damage, identifies the correct government jurisdiction (MCD, PWD, NHAI, MCG, GMDA, Noida Authority), and generates bilingual (English & Hindi) formal complaints.
 
+> *"Delhi has over 1,400 km of roads maintained by three different agencies. When you hit a pothole, you don't know if it's MCD, PWD, or NHAI — so most complaints go nowhere. InfraWatch uses Gemini Vision to classify the damage, identify the right authority, and write the complaint for you in under 10 seconds."*
 
-Screens
-1. Report Screen (main)
+---
 
-Full-width camera/upload button
-4-option infrastructure type selector (Road/Pothole, Bridge/Overpass, Footbridge, Flyover/Ramp)
-Road classification dropdown: Colony road → MCD / Main arterial → PWD / Highway/flyover → NHAI / Bridge → PWD or NHAI / Footbridge → Municipal body
-"Analyze with Gemini" CTA button
-Result card rendered below (see Gemini output section)
+## Key Features
 
-2. History Screen
+- **📸 Dual-Mode Image Intake:** Capture live photos using the device camera or select existing images from the gallery.
+- **👁️ Gemini 2.5 Flash Vision AI:** Evaluates structural defects from images, assessing category, severity status, estimated size, surroundings, and safety risks.
+- **📍 Location-Aware Header & Routing:** Reverse-geocodes user coordinates to display local status and maps correct municipal jurisdictions automatically.
+- **📝 Bilingual Complaint Generation:** Instantly drafts formal civic complaint emails/letters in both English and Hindi.
+- **📬 One-Touch Dispatch Tools:** Copy buttons for fields (To, Subject, Body) and direct native email client launcher (`mailto:` integration).
+- **🗃️ Local History Database:** Persists reports on-device using `@react-native-async-storage/async-storage` for offline review.
+- **📞 Interactive Civic Directory:** City-specific helpline tabs (Delhi, Gurugram, Noida, and National Highways) with dial-triggering links and native X (Twitter) deep-linking support.
+- **🖼️ Shareable Report Cards:** Generates clean, visual summary cards of infrastructure issues to export directly to the photo library or share via native channels.
 
-localStorage list of past reports (image thumbnail + severity + date)
-Tap to re-open any report card
+---
 
-3. Nearby Screen
+## Tech Stack
 
-Static info card: "Report a problem near you" with helpline numbers for MCD (1800110093), PWD Delhi, NHAI (1033)
+* **Framework:** React Native (v0.81.5) via Expo SDK (v54.0.0)
+* **AI Engine:** `@google/generative-ai` SDK (Gemini 2.5 Flash)
+* **Location Services:** `expo-location` (for reverse geocoding & coordinates)
+* **Media & Camera:** `expo-image-picker`
+* **Storage:** `@react-native-async-storage/async-storage`
+* **Sharing & Clipboard:** `expo-sharing`, `expo-clipboard`
+* **Icons:** `@expo/vector-icons` (Ionicons)
 
-4. About Screen
+---
 
-App description, disclaimer, GitHub link
+## Installation & Setup
 
+### Prerequisites
 
-Gemini integration
-Single API call using gemini-2.5-flash with the image + this system prompt:
-You are an infrastructure safety analyst for Indian roads and bridges.
-Analyze the provided image and the user-specified infrastructure type: [TYPE] on a [ROAD_CLASS].
+Make sure you have Node.js and the Expo Go app (or Emulator) set up on your machine.
 
-Respond ONLY with a valid JSON object in this exact schema:
-{
-  "damage_type": "string — specific damage name e.g. 'deep pothole with edge cracking'",
-  "severity": "LOW | MEDIUM | HIGH | CRITICAL",
-  "severity_reasoning": "string — 1 sentence why",
-  "estimated_size": "string — approximate dimensions if visible, else 'not determinable'",
-  "risk_narrative": "string — 2 sentences: who is at risk and when",
-  "context_observations": "string — what surroundings suggest e.g. school zone, market, highway",
-  "authority_name": "string — exact authority e.g. 'MCD South Delhi'",
-  "authority_reasoning": "string — 1 sentence why this authority",
-  "complaint_letter_english": "string — full formal complaint letter addressed to the authority",
-  "complaint_letter_hindi": "string — same letter in Hindi",
-  "helpline_number": "string — relevant helpline",
-  "twitter_handle": "string — official Twitter/X handle to tag e.g. @MCD_Delhi",
-  "disclaimer": "This is an AI-assisted visual observation, not a certified engineering assessment. Please contact a qualified engineer for structural evaluations."
-}
+### 1. Clone the repository and install dependencies
+```bash
+cd infrawatch
+npm install
+```
 
-Report card (shareable)
-Use html2canvas to capture a styled card containing:
+### 2. Configure Environment Variables
+Create a `.env` file in the root of the project:
+```env
+EXPO_PUBLIC_GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE
+```
+> **Note:** The key must be prefixed with `EXPO_PUBLIC_` to be accessible within the Expo client-side bundle.
 
-App name + logo
-Photo thumbnail
-Severity badge (color-coded: green/yellow/orange/red)
-Damage type + estimated size
-Authority name
-Risk narrative
-"Generated by InfraWatch · Powered by Gemini"
-Disclaimer line
+### 3. Run the Application
+Start the Expo development server:
+```bash
+# Start Metro bundler
+npm start
 
-Export as PNG. Share via Web Share API (works on Android Chrome natively).
+# Run on Android emulator/device
+npm run android
 
-Authority mapping logic (fallback if Gemini misses)
-jsconst authorityMap = {
-  "colony": { name: "MCD", helpline: "1800110093", twitter: "@MCD_Delhi" },
-  "arterial": { name: "PWD Delhi", helpline: "011-23379023", twitter: "@PWD_Delhi" },
-  "highway": { name: "NHAI", helpline: "1033", twitter: "@NHAI_Official" },
-  "bridge": { name: "PWD / NHAI", helpline: "1033", twitter: "@PWD_Delhi" },
-  "footbridge": { name: "Local Municipal Body", helpline: "1800110093", twitter: "@MCD_Delhi" },
-}
+# Run on iOS emulator/device
+npm run ios
 
-Key UX rules
+# Run in web browser
+npm run web
+```
 
-Analyze button disabled until both photo and type are selected
-Loading state: "Gemini is analyzing..." with a spinner
-All Gemini errors caught and shown as a friendly inline message
-Complaint letter shown in a scrollable modal with one-tap copy
-Hindi/English toggle on the complaint letter
-Result persisted to localStorage automatically after each analysis
+To clear the packager cache while starting, run:
+```bash
+npx expo start -c
+```
 
+---
 
-The blog post hook (for your submission)
+## Core System Architecture
 
-"Delhi has over 1,400 km of roads maintained by three different agencies. When you hit a pothole, you don't know if it's MCD, PWD, or NHAI — so most complaints go nowhere. InfraWatch uses Gemini Vision to classify the damage, identify the right authority, and write the complaint for you in under 10 seconds."
+### 📂 Directory Structure
+```
+infrawatch/
+├── App.js                     # Root component, location permissions & geocoding
+├── app.json                   # Expo configuration
+├── package.json               # Scripts & dependencies
+├── src/
+│   ├── components/
+│   │   ├── AboutScreen.js     # Mission statement & safety disclaimers
+│   │   ├── HistoryScreen.js   # Local history dashboard & detail modals
+│   │   ├── NearbyScreen.js    # Interactive local helpline directories
+│   │   ├── ReportCard.js      # Shared card layout & image capture hook
+│   │   └── ReportScreen.js    # Defect capture form & Gemini analysis output
+│   └── utils/
+│       └── gemini.js          # Gemini SDK client setup & fallback authority map
+```
 
+---
+
+## Civic Jurisdiction & Contact Map
+
+The application maps specific civic divisions based on the city and the type of road class chosen:
+
+| Road Class | Assigned Agency | Primary Jurisdiction |
+| :--- | :--- | :--- |
+| **Colony / Local Road** | MCD (Delhi) / MCG (Gurugram) / Noida Auth | Local street lights, garbage, sector roads |
+| **Arterial / Major Road** | PWD Delhi / GMDA Gurugram / Noida Auth | Flyovers, subways, multi-lane dividers, main drains |
+| **Highways & Expressways**| NHAI | National highways (NH-48, DND, Expressway bypasses) |
+| **Bridges & Overpasses**  | PWD Bridge Div / GMDA / Noida Auth | Structural repairs, flyover joints |
+| **Footbridges & Subways** | MCD / MCG / Noida Auth | Pedestrian subways, skywalk facilities |
+
+---
+
+## Direct Communication Protocols
+
+The application integrates natively with device hardware interfaces:
+- **Phone Calls:** Initiates call dialing via `tel:${number}` URIs.
+- **X (Twitter) Tagging:** Uses custom deep linking `twitter://user?screen_name=${handle}` to launch the native mobile app, falling back to HTTPS URL redirects in the mobile browser if the app is not installed.
+- **Bilingual Mail Dispatch:** Pre-compiles the entire formal complaint body, subject line, and recipient address, launching the device's native mail client using standard `mailto:` deep link parameters.
+
+---
+
+## Safety Disclaimer
+
+InfraWatch is an AI-assisted visual observation tool, not a certified engineering assessment platform. The AI-generated analyses, severity ratings, and risk narratives are based solely on visual heuristics and should not replace professional structural evaluations. In emergency situations with active safety hazards (e.g., bridge collapses, active electrical wires on flooded roads), users must immediately contact unified emergency dispatch services at **112**.
